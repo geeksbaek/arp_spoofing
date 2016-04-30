@@ -31,7 +31,7 @@ int main() {
 
     int selected;
 
-    do {
+     while(true) {
         selected = 0;
         printf("\n>> ");
         scanf("%d", &selected);
@@ -62,7 +62,7 @@ int main() {
             printf("Invaild Input.\n");
             break;
         }
-    } while(true);
+    }
 
     return 0;
 }
