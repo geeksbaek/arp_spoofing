@@ -7,3 +7,4 @@ SOURCES += main.cpp
 
 LIBS += -lpcap
 LIBS += -lnet
+LIBS += -lpthread
