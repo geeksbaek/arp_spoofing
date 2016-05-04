@@ -9,6 +9,7 @@
 ARPSpoofing::ARPSpoofing(char *senderIP, char *receiverIP) {
     this->senderIP = senderIP;
     this->receiverIP = receiverIP;
+    this->device = pcap_lookupdev(NULL);
 }
 
 bool ARPSpoofing::Init() {
@@ -27,30 +28,45 @@ bool ARPSpoofing::Init() {
     }
     this->receiverIPInt32 = (u_int32_t) t.sin_addr.s_addr;
 
-    recvARPThread = std::thread([this]{
+    recvARPThread = std::thread([this] {
         ARPSpoofing::recvARP(this->senderIPInt32, &this->senderMAC);
     });
-    if (ARPSpoofing::sendARP(this->senderIP, this->senderIPInt32) == false) {
+    sleep(1);
+    if (ARPSpoofing::sendARP(this->senderIP) == false) {
         printf("Error 3");
         return false;
     }
     recvARPThread.join();
+    printf("Sender IP Address : %s\n", this->senderIP);
+    printf("Sender MAC Address : %s\n", this->senderMAC);
 
-    recvARPThread = std::thread([this]{
+    recvARPThread = std::thread([this] {
         ARPSpoofing::recvARP(this->receiverIPInt32, &this->receiverMAC);
     });
-    if (ARPSpoofing::sendARP(this->receiverIP, this->receiverIPInt32) == false) {
+    sleep(1);
+    if (ARPSpoofing::sendARP(this->receiverIP) == false) {
         printf("Error 4");
         return false;
     }
     recvARPThread.join();
+    printf("Receiver IP Address : %s\n", this->receiverIP);
+    printf("Receiver MAC Address : %s\n", this->receiverMAC);
 
     return true;
 }
 
-bool ARPSpoofing::sendARP(char *IP, u_int32_t IPInt32) {
+bool ARPSpoofing::Attack() {
+    return true;
+}
+
+
+bool ARPSpoofing::Stop() {
+    return true;
+}
+
+bool ARPSpoofing::sendARP(char *IP) {
     int _t;
-    in_addr_t dstIP = inet_addr(this->senderIP);
+    in_addr_t dstIP = inet_addr(IP);
     u_int8_t *dstMAC = libnet_hex_aton("ff:ff:ff:ff:ff:ff", &_t);
     u_int8_t *dstHardware = libnet_hex_aton("00:00:00:00:00:00", &_t);
     char errbuf[LIBNET_ERRBUF_SIZE];
@@ -74,7 +90,7 @@ bool ARPSpoofing::sendARP(char *IP, u_int32_t IPInt32) {
     }
 
     /* build the ethernet header */
-    libnet_ptag_t eth = libnet_build_ethernet(dstMAC, (u_int8_t*) srcMAC, ETHERTYPE_ARP, NULL, 0, l,0);
+    libnet_ptag_t eth = libnet_build_ethernet(dstMAC, (u_int8_t*) srcMAC, ETHERTYPE_ARP, NULL, 0, l, 0);
     if (eth == -1) {
         fprintf(stderr, "Unable to build Ethernet header: %s\n", libnet_geterror(l));
         return false;
@@ -98,7 +114,7 @@ bool ARPSpoofing::recvARP(u_int32_t IPInt32, char **MAC) {
     char errbuf[PCAP_ERRBUF_SIZE];  /* Error string */
 
     /* Open the session in promiscuous mode */
-    handle = pcap_open_live(this->device, BUFSIZ, 1, 1000, errbuf);
+    handle = pcap_open_live(this->device, BUFSIZ, 1, 5000, errbuf);
     if (handle == NULL) {
         sprintf(*MAC, "Couldn't open device %s: %s\n", this->device, errbuf);
         return false;
@@ -107,16 +123,18 @@ bool ARPSpoofing::recvARP(u_int32_t IPInt32, char **MAC) {
     pcap_pkthdr header;
     const u_char *packet;
 
+    printf("Scan Start.\n");
+
     while (true) {
         packet = pcap_next(handle, &header);
-
         libnet_ethernet_hdr *ethHeader = (libnet_ethernet_hdr*) packet;
         if (ntohs(ethHeader->ether_type) == ETHERTYPE_ARP) {
             _libnet_arp_hdr *arpHeader = (_libnet_arp_hdr*) (packet + sizeof(libnet_ethernet_hdr));
-            printf("%x\n", arpHeader->ar_sha);
+            printf("%d\n", ntohs(arpHeader->ar_op));
             if (ntohs(arpHeader->ar_op) == ARPOP_REPLY && (*(u_int32_t*) arpHeader->ar_spa) == IPInt32) {
                 char buf[18];
-                *MAC = ether_ntoa_r((ether_addr*)arpHeader->ar_sha, buf);
+                *MAC = ether_ntoa_r((ether_addr*)ethHeader->ether_shost, buf);
+                printf("%x\n", ethHeader->ether_shost[0]);
                 pcap_close(handle);
                 return true;
             }

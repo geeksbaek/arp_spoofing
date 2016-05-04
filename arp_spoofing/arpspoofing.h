@@ -30,10 +30,10 @@ class ARPSpoofing {
 private:
     char *senderIP, *senderMAC, *receiverIP, *receiverMAC;
     u_int32_t senderIPInt32, receiverIPInt32;
-    char *device = "eth0";
+    char *device;
     u_int32_t attackCycle = 1;
 
-    bool sendARP(char *IP, u_int32_t IPInt32);
+    bool sendARP(char *IP);
     bool recvARP(u_int32_t IPInt32, char **MAC);
     bool relay();
     bool recover();
