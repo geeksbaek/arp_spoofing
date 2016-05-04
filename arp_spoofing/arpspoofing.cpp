@@ -8,11 +8,15 @@
 
 ARPSpoofing::ARPSpoofing(char *senderIP, char *receiverIP) {
     this->senderIP = senderIP;
+    this->senderMAC = (char*) malloc(18);
     this->receiverIP = receiverIP;
+    this->receiverMAC = (char*) malloc(18);
     this->device = pcap_lookupdev(NULL);
 }
 
 bool ARPSpoofing::Init() {
+    printf(">> Initialize Start.\n");
+
     sockaddr_in t;
     std::thread recvARPThread;
 
@@ -52,6 +56,7 @@ bool ARPSpoofing::Init() {
     printf("Receiver IP Address : %s\n", this->receiverIP);
     printf("Receiver MAC Address : %s\n", this->receiverMAC);
 
+    printf(">> Initialize Successed.\n");
     return true;
 }
 
@@ -123,18 +128,13 @@ bool ARPSpoofing::recvARP(u_int32_t IPInt32, char **MAC) {
     pcap_pkthdr header;
     const u_char *packet;
 
-    printf("Scan Start.\n");
-
     while (true) {
         packet = pcap_next(handle, &header);
         libnet_ethernet_hdr *ethHeader = (libnet_ethernet_hdr*) packet;
         if (ntohs(ethHeader->ether_type) == ETHERTYPE_ARP) {
             _libnet_arp_hdr *arpHeader = (_libnet_arp_hdr*) (packet + sizeof(libnet_ethernet_hdr));
-            printf("%d\n", ntohs(arpHeader->ar_op));
             if (ntohs(arpHeader->ar_op) == ARPOP_REPLY && (*(u_int32_t*) arpHeader->ar_spa) == IPInt32) {
-                char buf[18];
-                *MAC = ether_ntoa_r((ether_addr*)ethHeader->ether_shost, buf);
-                printf("%x\n", ethHeader->ether_shost[0]);
+                ether_ntoa_r((ether_addr*)ethHeader->ether_shost, *MAC);
                 pcap_close(handle);
                 return true;
             }

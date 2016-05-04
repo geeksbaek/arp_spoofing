@@ -1,15 +1,8 @@
 #include <stdio.h>
 #include "arpspoofing.h"
 
-bool checkArgValidation(int argc, char *argv[]) {
-    if (argc != 3) {
-        return false;
-    }
-    return true;
-}
-
 int main(int argc, char *argv[]) {
-    if (checkArgValidation(argc, argv) == false) {
+    if (argc != 3) {
         fprintf(stderr, "Invaild Arguments.\n");
         exit(1);
     }
@@ -20,7 +13,6 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, ">> Initialize Failed.\n");
         exit(1);
     }
-    printf(">> Initialize Successed.\n");
 
     if (ArpSpoofer.Attack() == false) {
         fprintf(stderr, ">> Attack Failed.\n");
@@ -31,7 +23,7 @@ int main(int argc, char *argv[]) {
     getchar();
 
     ArpSpoofer.Stop();
-    printf(">> Attack Stopped. ARP table of all users have been recovered.");
+    printf(">> Attack Stopped. ARP table of all users have been recovered.\n");
 
     return 0;
 }
