@@ -10,14 +10,11 @@ int main(int argc, char *argv[]) {
     ARPSpoofing ArpSpoofer = ARPSpoofing(argv[1], argv[2]);
 
     if (ArpSpoofer.Init() == false) {
-        fprintf(stderr, ">> Initialize Failed.\n");
+        fprintf(stderr, "Initialize Failed.\n");
         exit(1);
     }
 
-    if (ArpSpoofer.Attack() == false) {
-        fprintf(stderr, ">> Attack Failed.\n");
-        exit(1);
-    }
+    ArpSpoofer.Attack();
     printf(">> Attack started. If want stop attack, Press any button.");
 
     getchar();
