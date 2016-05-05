@@ -26,23 +26,26 @@ struct _libnet_arp_hdr {
     u_char ar_tpa[4];                         /* target protocol address */
 };
 
+#define MAC_ADDR_LEN 18
+
 class ARPSpoofing {
 private:
     char        *senderIP;
-    char        *senderMAC;
+    uint8_t     senderMAC[MAC_ADDR_LEN];
     u_int32_t   senderIPInt32;
     char        *receiverIP;
-    char        *receiverMAC;
+    uint8_t     receiverMAC[MAC_ADDR_LEN];
     u_int32_t   receiverIPInt32;
     char        *device;
     u_int32_t   attackCycle = 1;
+    bool        exitFlag = false;
 
     bool sendARPReq(char *_dstIP);
-    bool sendARPResp(char *_dstIP, char *_dstMAC, char *_srcIP, char *_srcMAC);
-    bool recvARPResp(u_int32_t srcIPInt32, char *recvMAC);
-    bool _sendARP(char *_dstIP, char *_dstMAC, char *_srcIP, char *_srcMAC, u_int16_t arpType);
-    void relay();
-    bool recover();
+    bool sendARPResp(char *_dstIP, uint8_t *_dstMAC, char *_srcIP, uint8_t *_srcMAC);
+    bool recvARPResp(u_int32_t srcIPInt32, uint8_t *recvMAC);
+    bool _sendARP(char *_dstIP, uint8_t *_dstMAC, char *_srcIP, uint8_t *_srcMAC, u_int16_t arpType);
+    bool relay();
+    void recover();
 
 public:
     ARPSpoofing(char *senderIP, char *receiverIP);
