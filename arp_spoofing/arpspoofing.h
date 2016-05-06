@@ -2,54 +2,57 @@
 #define ARPSPOOFING_H
 
 #include <libnet.h>
+#include <pcap.h>
+#include <functional>
+
+#define MAC_ADDR_LEN 6
+#define IPv4_ADDR_LEN 4
 
 struct _libnet_arp_hdr {
-    u_short ar_hrd;                         /* format of hardware address */
-#define ARPHRD_ETHER     1                  /* ethernet hardware format */
-    u_short ar_pro;                         /* format of protocol address */
-    u_char  ar_hln;                         /* length of hardware address */
-    u_char  ar_pln;                         /* length of protocol addres */
-    u_short ar_op;                          /* operation type */
-#define ARPOP_REQUEST    1                  /* req to resolve address */
-#define ARPOP_REPLY      2                  /* resp to previous request */
-#define ARPOP_REVREQUEST 3                  /* req protocol address given hardware */
-#define ARPOP_REVREPLY   4                  /* resp giving protocol address */
-#define ARPOP_INVREQUEST 8                  /* req to identify peer */
-#define ARPOP_INVREPLY   9                  /* resp identifying peer */
-
-    /*
-    *  These should implementation defined but I've hardcoded eth/IP.
-    */
-    u_char ar_sha[6];                         /* sender hardware address */
-    u_char ar_spa[4];                         /* sender protocol address */
-    u_char ar_tha[6];                         /* target hardware address */
-    u_char ar_tpa[4];                         /* target protocol address */
+    u_short ar_hrd;                 /* format of hardware address */
+    u_short ar_pro;                 /* format of protocol address */
+    u_char  ar_hln;                 /* length of hardware address */
+    u_char  ar_pln;                 /* length of protocol addres */
+    u_short ar_op;                  /* operation type */
+    u_char ar_sha[MAC_ADDR_LEN];    /* sender hardware address */
+    u_char ar_spa[IPv4_ADDR_LEN];   /* sender protocol address */
+    u_char ar_tha[MAC_ADDR_LEN];    /* target hardware address */
+    u_char ar_tpa[IPv4_ADDR_LEN];   /* target protocol address */
 };
-
-#define MAC_ADDR_LEN 18
 
 class ARPSpoofing {
 private:
-    char        *senderIP;
-    uint8_t     senderMAC[MAC_ADDR_LEN];
-    u_int32_t   senderIPInt32;
-    char        *receiverIP;
-    uint8_t     receiverMAC[MAC_ADDR_LEN];
-    u_int32_t   receiverIPInt32;
-    char        *device;
-    u_int32_t   attackCycle = 1;
-    bool        exitFlag = false;
+    u_int8_t s_ip[IPv4_ADDR_LEN];   // sender ip addr
+    u_int8_t s_mac[MAC_ADDR_LEN];   // sender mac addr
+    u_int8_t r_ip[IPv4_ADDR_LEN];   // receiver ip addr
+    u_int8_t r_mac[MAC_ADDR_LEN];   // receiver mac addr
+    u_int8_t a_ip[IPv4_ADDR_LEN];   // attacker ip addr
+    u_int8_t a_mac[MAC_ADDR_LEN];   // attacker mac addr
 
-    bool sendARPReq(char *_dstIP);
-    bool sendARPResp(char *_dstIP, uint8_t *_dstMAC, char *_srcIP, uint8_t *_srcMAC);
-    bool recvARPResp(u_int32_t srcIPInt32, uint8_t *recvMAC);
-    bool _sendARP(char *_dstIP, uint8_t *_dstMAC, char *_srcIP, uint8_t *_srcMAC, u_int16_t arpType);
-    bool relay();
-    void recover();
+    u_int8_t broadcast[MAC_ADDR_LEN] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+    u_int8_t zerofill[MAC_ADDR_LEN] = {0,};
+
+    char *device;
+    bool exitFlag = false;
+    int attack_cycle = 3;
+
+    void _get_mac_addr_through_arp_request(u_int8_t *t_ip, u_int8_t *t_mac);
+    void _relay();
+    void __read_packet(std::function<void(pcap_t *handle, pcap_pkthdr header, const u_char *packet)> cb);
+    void _recover();
+    void _send_ARP_request(u_int8_t *d_ip);
+    void _send_ARP_response(u_int8_t *d_ip, uint8_t *d_mac, u_int8_t *s_ip, uint8_t *r_mac);
+    bool __send_ARP(u_int8_t *d_ip, uint8_t *d_mac, u_int8_t *s_ip, uint8_t *s_mac, u_int16_t arp_type);
+
+    static bool _bytes_equal(u_int8_t *bytes_a, u_int8_t *bytes_b, int size);
+    static void _bytes_print(u_int8_t *bytes_array, int size);
+    static void _char_bytes_to_uint8_bytes(char *char_array, u_int8_t *bytes_array);
+    static char* _uint8_bytes_to_char_bytes(u_int8_t *bytes_array);
+    static u_int8_t* _reverse_byte_order(u_int8_t *bytes_array, int size);
 
 public:
-    ARPSpoofing(char *senderIP, char *receiverIP);
-    bool Init();
+    ARPSpoofing();
+    bool Init(char *s_ip_str, char *r_ip_str);
     void Attack();
     bool Stop();
 };

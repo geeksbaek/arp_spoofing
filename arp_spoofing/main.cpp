@@ -7,15 +7,12 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    ARPSpoofing ArpSpoofer = ARPSpoofing(argv[1], argv[2]);
+    ARPSpoofing ArpSpoofer = ARPSpoofing();
 
-    if (ArpSpoofer.Init() == false) {
-        fprintf(stderr, "Initialize Failed.\n");
-        exit(1);
-    }
+    ArpSpoofer.Init(argv[1], argv[2]);
 
     ArpSpoofer.Attack();
-    printf(">> Attack started. If want stop attack, Press any button.");
+    printf(">> Attack started. If want stop attack, Press any button.\n");
 
     getchar();
 

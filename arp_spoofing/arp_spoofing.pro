@@ -11,4 +11,4 @@ LIBS += -lnet
 LIBS += -lpthread
 
 HEADERS += \
-    arpspoofing.h
+    arpspoofing.h \
