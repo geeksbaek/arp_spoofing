@@ -35,9 +35,9 @@ private:
     char *device;
     bool exitFlag = false;
     bool endAttack = false;
-    int attack_cycle = 3;
+    int attack_cycle = 1;
 
-    void _get_mac_addr_through_arp_request(u_int8_t *t_ip, u_int8_t *t_mac, u_int8_t *a_ip);
+    void _get_mac_addr_through_arp_request(u_int8_t *t_ip, u_int8_t *t_mac);
     void _relay();
     void __read_packet(std::function<void(pcap_t *handle, pcap_pkthdr header, const u_char *packet)> cb);
     void _send_ARP_request(u_int8_t *d_ip);
