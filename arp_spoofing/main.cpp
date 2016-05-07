@@ -17,7 +17,10 @@ int main(int argc, char *argv[]) {
     getchar();
 
     ArpSpoofer.Stop();
-    printf(">> Attack Stopped. ARP table of all users have been recovered.\n");
+    printf(">> Attack Stopped.\n");
+
+    ArpSpoofer.Recover();
+    printf(">> ARP table have been recovered.\n");
 
     return 0;
 }
