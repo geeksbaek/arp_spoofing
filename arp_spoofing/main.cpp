@@ -12,12 +12,18 @@ int main(int argc, char *argv[]) {
     ArpSpoofer.Init(argv[1], argv[2]);
 
     ArpSpoofer.Attack();
-    printf(">> Attack started. If want stop attack, Press any button.\n");
+    printf(">> Attack started.\n");
+
+    ArpSpoofer.Relay();
+    printf(">> Relay Running...\n");
 
     getchar();
 
-    ArpSpoofer.Stop();
-    printf(">> Attack Stopped.\n");
+    ArpSpoofer.Attack_Stop();
+    printf(">> Attack Stopping...\n");
+
+    ArpSpoofer.Relay_Stop();
+    printf(">> Relay Stopping...\n");
 
     ArpSpoofer.Recover();
     printf(">> ARP table have been recovered.\n");
