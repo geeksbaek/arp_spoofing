@@ -42,7 +42,7 @@ private:
 
     void _get_mac_addr_through_arp_request(u_int8_t *t_ip, u_int8_t *t_mac);
     void _relay();
-    void __read_packet(std::function<void(pcap_t *handle, pcap_pkthdr header, const u_char *packet)> cb);
+    void __read_packet(std::function<void(pcap_t *handle, pcap_pkthdr *header, const u_char *packet)> cb);
     void _send_ARP_request(u_int8_t *d_ip, uint8_t *d_mac, u_int8_t *s_ip, uint8_t *s_mac);
     void _send_ARP_response(u_int8_t *d_ip, uint8_t *d_mac, u_int8_t *s_ip, uint8_t *s_mac);
     bool __send_ARP(u_int8_t *d_ip, uint8_t *d_mac, u_int8_t *s_ip, uint8_t *s_mac, u_int16_t arp_type);
